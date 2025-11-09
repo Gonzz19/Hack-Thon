@@ -10,8 +10,7 @@ def cost_distance(edge):
         float: coste estimado de distancia
     """
 
-    edge_atr = edge.attributes_list()
-    dist = edge_atr[4]
+    dist = edge['distance']
     return dist 
 
 
