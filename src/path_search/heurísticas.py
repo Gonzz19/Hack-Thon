@@ -72,3 +72,16 @@ def h_combined(n: Coord,
      h_f = h_fuel(n, goal, cell_nm=cell_nm, fuel_per_nm_base=fuel_per_nm_base)
      h_s = h_safe(n, goal, global_min_edge_risk=global_min_edge_risk)
      return w_time * h_t + w_fuel * h_f + w_safe * h_s
+
+
+def h_distance(n: Coord,
+               goal: Coord,
+               *,
+               cell_nm: float = 1.0
+               ) -> float:
+    """
+    Heurística basada en la distancia restante (millas náuticas).
+    Admisible: asume que no hay coste adicional por viento, olas o riesgo.
+    """
+    steps = manhattan_steps(n, goal)
+    return steps * cell_nm  

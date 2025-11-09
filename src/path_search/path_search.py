@@ -1,23 +1,18 @@
 import heapq
 import math
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
-from load_graph import load_graph, print_graph_summary
-from heurísticas import h_safe, h_fuel, h_time, h_combined
-from costs import cost_fuel,cost_safe,cost_time, combined_cost
+from graph import Graph
+from heurísticas import h_safe, h_fuel, h_time, h_combined, h_distance
+from costs import cost_fuel,cost_safe,cost_time, combined_cost, cost_distance
 
 Node = Any
 NeighborsFn = Callable[[Node], Iterable[Node]]
 CostFn = Callable[[Node, Node], float]        # cost_fn(from_node, to_node)
 HeuristicFn = Callable[[Node, Node], float]   # h_fn(node, goal)
 MinDepthFn = Callable[[Node], float]          # profundidad_minima(node) -> profundidad
-
-def neighbors_fn(node): 
-    if node in graph:
-        neigh = []
-        for edge in graph[node]:
-            neigh.append((edge.to, edge))
-        return neigh
-    return None
+Graph = Graph
+def min_depth_fn(node: Node, graph) -> float:
+    return graph.get_vertex_depth(node) or 0.0
 
 
 
@@ -27,6 +22,7 @@ def a_star(
     neighbors_fn: NeighborsFn,
     cost_fn: CostFn,
     h_fn: HeuristicFn,
+    graph,
     min_depth_fn: Optional[MinDepthFn] = None,
     ship_draft: Optional[float] = None,
 ) -> Optional[List[Node]]:
@@ -86,13 +82,15 @@ def a_star(
         visited.add(current)
 
         # Explorar vecinos
-        for m,e in neighbors_fn(current):
+        for m in neighbors_fn(current):
             # Filtrado por profundidad mínima (calado)
             if min_depth_fn is not None and ship_draft is not None:
-                if min_depth_fn(m) < ship_draft:
+                if min_depth_fn(m, graph) < ship_draft:
                     continue
-
-            tentative_g = g.get(current, math.inf) + cost_fn(current, m)
+            e = graph.get_edge_data(current, m)
+            if e is None:
+                continue
+            tentative_g = g.get(current, math.inf) + cost_fn(e)
 
             if tentative_g < g.get(m, math.inf):
                 parent[m] = current
@@ -105,18 +103,21 @@ def a_star(
     return None
 
 
+g = Graph()
+g.load_data('src/data/asia_india_norte_nodes.csv','src/data/asia_india_norte_edges.csv')
+print(g.get_neighbors((5.435416666666669,73.18958333333332)))
+# csv_path = 'graph_edges.csv'
+# graph = load_graph(csv_path)
 
-
-csv_path = 'graph_edges.csv'
-graph = load_graph(csv_path)
-
-start = (0,0)
-goal = (40,10)
+start = (5.435416666666669,73.18958333333332)
+goal = (5.497916666666669,73.18958333333332)
 path = a_star(start=start,
               goal=goal,
-              neighbors_fn=neighbors_fn,
-              cost_fn=combined_cost,
-              h_fn=h_combined,
+              neighbors_fn=g.get_neighbors,
+              cost_fn=cost_distance,
+              graph=g,
+              h_fn=h_distance,
               min_depth_fn=None,
               ship_draft=None
           )
+
